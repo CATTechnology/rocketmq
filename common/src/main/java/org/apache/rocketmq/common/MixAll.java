@@ -178,6 +178,13 @@ public class MixAll {
         return file2String(file);
     }
 
+    /**
+     * 文件转换为字符串
+     *
+     * @param file 文件
+     * @return 字符串
+     * @throws IOException
+     */
     public static String file2String(final File file) throws IOException {
         if (file.exists()) {
             byte[] data = new byte[(int) file.length()];

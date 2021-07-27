@@ -124,6 +124,7 @@ public class RemoteBrokerOffsetStore implements OffsetStore {
             if (offset != null) {
                 if (mqs.contains(mq)) {
                     try {
+                        //更新当前机器上MessageQueue对应的offset到Broker
                         this.updateConsumeOffsetToBroker(mq, offset.get());
                         log.info("[persistAll] Group: {} ClientId: {} updateConsumeOffsetToBroker {} {}",
                             this.groupName,
@@ -134,6 +135,7 @@ public class RemoteBrokerOffsetStore implements OffsetStore {
                         log.error("updateConsumeOffsetToBroker exception, " + mq.toString(), e);
                     }
                 } else {
+                    //当前没有使用到的 MessageQueue
                     unusedMQ.add(mq);
                 }
             }
@@ -206,12 +208,14 @@ public class RemoteBrokerOffsetStore implements OffsetStore {
         }
 
         if (findBrokerResult != null) {
+            //将更新Offset的请求参数封装为 UpdateConsumerOffsetRequestHeader
             UpdateConsumerOffsetRequestHeader requestHeader = new UpdateConsumerOffsetRequestHeader();
             requestHeader.setTopic(mq.getTopic());
             requestHeader.setConsumerGroup(this.groupName);
             requestHeader.setQueueId(mq.getQueueId());
             requestHeader.setCommitOffset(offset);
 
+            //发送网络请求，超时时间为5秒
             if (isOneway) {
                 this.mQClientFactory.getMQClientAPIImpl().updateConsumerOffsetOneway(
                     findBrokerResult.getBrokerAddr(), requestHeader, 1000 * 5);

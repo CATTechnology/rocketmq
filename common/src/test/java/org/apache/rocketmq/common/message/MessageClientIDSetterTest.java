@@ -30,6 +30,7 @@ public class MessageClientIDSetterTest {
         String ipStr = (4 == ip.length) ? UtilAll.ipToIPv4Str(ip) : UtilAll.ipToIPv6Str(ip);
 
         String uniqID = MessageClientIDSetter.createUniqID();
+        System.out.println(uniqID);
         String ipStrFromID = MessageClientIDSetter.getIPStrFromID(uniqID);
 
         assertThat(ipStr).isEqualTo(ipStrFromID);

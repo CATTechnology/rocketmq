@@ -49,6 +49,7 @@ public class KVConfigManager {
             log.warn("Load KV config table exception", e);
         }
         if (content != null) {
+            //通过Fastjson将json字符串转换为
             KVConfigSerializeWrapper kvConfigSerializeWrapper =
                 KVConfigSerializeWrapper.fromJson(content, KVConfigSerializeWrapper.class);
             if (null != kvConfigSerializeWrapper) {

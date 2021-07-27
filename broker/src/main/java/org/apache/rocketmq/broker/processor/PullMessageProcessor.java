@@ -256,6 +256,7 @@ public class PullMessageProcessor extends AsyncNettyRequestProcessor implements 
                 case SYNC_MASTER:
                     break;
                 case SLAVE:
+                    //判断当前broker的角色，如果是slave，同时slaveReadEnable=false,就将suggestWhichBrokerId设置为0，表示建议从master拉取
                     if (!this.brokerController.getBrokerConfig().isSlaveReadEnable()) {
                         response.setCode(ResponseCode.PULL_RETRY_IMMEDIATELY);
                         responseHeader.setSuggestWhichBrokerId(MixAll.MASTER_ID);
@@ -263,6 +264,7 @@ public class PullMessageProcessor extends AsyncNettyRequestProcessor implements 
                     break;
             }
 
+            //是否从slave拉取消息
             if (this.brokerController.getBrokerConfig().isSlaveReadEnable()) {
                 // consume too slow ,redirect to another machine
                 if (getMessageResult.isSuggestPullingFromSlave()) {
@@ -273,6 +275,7 @@ public class PullMessageProcessor extends AsyncNettyRequestProcessor implements 
                     responseHeader.setSuggestWhichBrokerId(subscriptionGroupConfig.getBrokerId());
                 }
             } else {
+                //建议从Master拉取消息
                 responseHeader.setSuggestWhichBrokerId(MixAll.MASTER_ID);
             }
 

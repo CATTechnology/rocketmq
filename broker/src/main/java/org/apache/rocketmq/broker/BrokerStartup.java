@@ -55,6 +55,7 @@ public class BrokerStartup {
     public static InternalLogger log;
 
     public static void main(String[] args) {
+        //启动Broker
         start(createBrokerController(args));
     }
 
@@ -87,6 +88,14 @@ public class BrokerStartup {
         }
     }
 
+    /**
+     * 1.创建Broker核心控制器BrokerController，创建BrokerConfig、NettyServerConfig，设置监听端口10911，填充BrokerController、NettyServerConfig
+     * NettyClientConfig属性
+     * 2.获取NamesrvAddr
+     *
+     * @param args
+     * @return
+     */
     public static BrokerController createBrokerController(String[] args) {
         System.setProperty(RemotingCommand.REMOTING_VERSION_KEY, Integer.toString(MQVersion.CURRENT_VERSION));
 
@@ -225,6 +234,7 @@ public class BrokerStartup {
                 System.exit(-3);
             }
 
+            //添加jvm钩子函数，在虚拟机停止的时候，会调用该线程
             Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
                 private volatile boolean hasShutdown = false;
                 private AtomicInteger shutdownTimes = new AtomicInteger(0);

@@ -110,11 +110,14 @@ public class BrokerOuterAPI {
         this.remotingClient.updateNameServerAddressList(lst);
     }
 
+    /**
+     * 注册Broker到所有的NameServer上
+     */
     public List<RegisterBrokerResult> registerBrokerAll(
-        final String clusterName,
-        final String brokerAddr,
-        final String brokerName,
-        final long brokerId,
+        final String clusterName, //集群名称
+        final String brokerAddr, //broker地址
+        final String brokerName, //brokerName
+        final long brokerId, //
         final String haServerAddr,
         final TopicConfigSerializeWrapper topicConfigWrapper,
         final List<String> filterServerList,
@@ -122,7 +125,9 @@ public class BrokerOuterAPI {
         final int timeoutMills,
         final boolean compressed) {
 
+        //向NameServer注册Broker的响应结果列表
         final List<RegisterBrokerResult> registerBrokerResultList = new CopyOnWriteArrayList<>();
+        //获取所有NameServer
         List<String> nameServerAddressList = this.remotingClient.getNameServerAddressList();
         if (nameServerAddressList != null && nameServerAddressList.size() > 0) {
 
@@ -142,6 +147,7 @@ public class BrokerOuterAPI {
             requestHeader.setBodyCrc32(bodyCrc32);
             final CountDownLatch countDownLatch = new CountDownLatch(nameServerAddressList.size());
             for (final String namesrvAddr : nameServerAddressList) {
+                //并发的向所有的NameServer发送心跳信息
                 brokerOuterExecutor.execute(new Runnable() {
                     @Override
                     public void run() {
@@ -170,6 +176,22 @@ public class BrokerOuterAPI {
         return registerBrokerResultList;
     }
 
+    /**
+     * 向Nameserver发送心跳
+     *
+     * @param namesrvAddr nameServer地址
+     * @param oneway 单向请求
+     * @param timeoutMills 超时时间
+     * @param requestHeader 请求头
+     * @param body 请求体
+     * @return
+     * @throws RemotingCommandException
+     * @throws MQBrokerException
+     * @throws RemotingConnectException
+     * @throws RemotingSendRequestException
+     * @throws RemotingTimeoutException
+     * @throws InterruptedException
+     */
     private RegisterBrokerResult registerBroker(
         final String namesrvAddr,
         final boolean oneway,
@@ -181,6 +203,7 @@ public class BrokerOuterAPI {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.REGISTER_BROKER, requestHeader);
         request.setBody(body);
 
+        //单向发送
         if (oneway) {
             try {
                 this.remotingClient.invokeOneway(namesrvAddr, request, timeoutMills);
@@ -190,10 +213,13 @@ public class BrokerOuterAPI {
             return null;
         }
 
+        //双向发送，会同步等待响应结果
         RemotingCommand response = this.remotingClient.invokeSync(namesrvAddr, request, timeoutMills);
         assert response != null;
         switch (response.getCode()) {
             case ResponseCode.SUCCESS: {
+                //注册成功后，会获得当前Broker所在主从架构的master的地址
+                //服务端下发的拓展内容，是存储在extFields字段中
                 RegisterBrokerResponseHeader responseHeader =
                     (RegisterBrokerResponseHeader) response.decodeCommandCustomHeader(RegisterBrokerResponseHeader.class);
                 RegisterBrokerResult result = new RegisterBrokerResult();

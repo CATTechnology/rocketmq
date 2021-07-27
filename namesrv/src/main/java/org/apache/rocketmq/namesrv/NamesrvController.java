@@ -39,6 +39,9 @@ import org.apache.rocketmq.remoting.netty.TlsSystemConfig;
 import org.apache.rocketmq.srvutil.FileWatchService;
 
 
+/**
+ * NameServer核心控制器
+ */
 public class NamesrvController {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.NAMESRV_LOGGER_NAME);
 
@@ -49,10 +52,17 @@ public class NamesrvController {
     private final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor(new ThreadFactoryImpl(
         "NSScheduledThread"));
     private final KVConfigManager kvConfigManager;
+
+    /**
+     * 路由信息管理器
+     */
     private final RouteInfoManager routeInfoManager;
 
     private RemotingServer remotingServer;
 
+    /**
+     * 继承ChannelEventListener
+     */
     private BrokerHousekeepingService brokerHousekeepingService;
 
     private ExecutorService remotingExecutor;
@@ -75,15 +85,21 @@ public class NamesrvController {
 
     public boolean initialize() {
 
+        //加载KV配置管理器
+        //KV配置管理器作用：
         this.kvConfigManager.load();
 
+        //创建NettyServer网络处理对象 NettyRemotingServer
         this.remotingServer = new NettyRemotingServer(this.nettyServerConfig, this.brokerHousekeepingService);
+
 
         this.remotingExecutor =
             Executors.newFixedThreadPool(nettyServerConfig.getServerWorkerThreads(), new ThreadFactoryImpl("RemotingExecutorThread_"));
 
+        //注册请求处理器
         this.registerProcessor();
 
+        //开启定时任务：每隔10秒扫描一次Broker，移除不活跃的Broker
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
 
             @Override
@@ -92,6 +108,7 @@ public class NamesrvController {
             }
         }, 5, 10, TimeUnit.SECONDS);
 
+        //开启定时任务：每隔10分钟打印一次KV配置
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
 
             @Override
@@ -147,12 +164,13 @@ public class NamesrvController {
             this.remotingServer.registerDefaultProcessor(new ClusterTestRequestProcessor(this, namesrvConfig.getProductEnvName()),
                 this.remotingExecutor);
         } else {
-
+            //注册默认处理器
             this.remotingServer.registerDefaultProcessor(new DefaultRequestProcessor(this), this.remotingExecutor);
         }
     }
 
     public void start() throws Exception {
+        //启动服务器
         this.remotingServer.start();
 
         if (this.fileWatchService != null) {

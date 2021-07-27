@@ -311,6 +311,20 @@ public class DefaultMQPullConsumer extends ClientConfig implements MQPullConsume
         }
     }
 
+    /**
+     * 消息拉取
+     * @param mq from which message queue 消费的队列MessageQueue
+     * @param subExpression subscription expression.it only support or operation such as "tag1 || tag2 || tag3" <br> if
+     * null or * expression,meaning subscribe 消息的标签tag
+     * all
+     * @param offset from where to pull 偏移量
+     * @param maxNums max pulling numbers 一次拉取多少消息
+     * @return
+     * @throws MQClientException
+     * @throws RemotingException
+     * @throws MQBrokerException
+     * @throws InterruptedException
+     */
     @Override
     public PullResult pull(MessageQueue mq, String subExpression, long offset, int maxNums)
         throws MQClientException, RemotingException, MQBrokerException, InterruptedException {

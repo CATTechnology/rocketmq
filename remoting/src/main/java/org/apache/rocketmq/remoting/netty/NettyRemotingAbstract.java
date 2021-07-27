@@ -154,10 +154,10 @@ public abstract class NettyRemotingAbstract {
         final RemotingCommand cmd = msg;
         if (cmd != null) {
             switch (cmd.getType()) {
-                case REQUEST_COMMAND:
+                case REQUEST_COMMAND: //请求命令
                     processRequestCommand(ctx, cmd);
                     break;
-                case RESPONSE_COMMAND:
+                case RESPONSE_COMMAND: //相应命令
                     processResponseCommand(ctx, cmd);
                     break;
                 default:
@@ -185,6 +185,7 @@ public abstract class NettyRemotingAbstract {
 
     /**
      * Process incoming request command issued by remote peer.
+     * 处理远程client方发出的请求命令。
      *
      * @param ctx channel handler context.
      * @param cmd request command.
@@ -221,6 +222,7 @@ public abstract class NettyRemotingAbstract {
                             }
                         };
                         if (pair.getObject1() instanceof AsyncNettyRequestProcessor) {
+                            //调用异步netty请求处理器
                             AsyncNettyRequestProcessor processor = (AsyncNettyRequestProcessor)pair.getObject1();
                             processor.asyncProcessRequest(ctx, cmd, callback);
                         } else {
@@ -534,6 +536,7 @@ public abstract class NettyRemotingAbstract {
         if (acquired) {
             final SemaphoreReleaseOnlyOnce once = new SemaphoreReleaseOnlyOnce(this.semaphoreOneway);
             try {
+                //写入socket缓冲区，并注册一个监听器
                 channel.writeAndFlush(request).addListener(new ChannelFutureListener() {
                     @Override
                     public void operationComplete(ChannelFuture f) throws Exception {

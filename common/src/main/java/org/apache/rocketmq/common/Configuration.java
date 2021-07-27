@@ -99,6 +99,7 @@ public class Configuration {
         }
 
         try {
+            //加写锁，避免合并配置的时候（出现线程安全问题）
             readWriteLock.writeLock().lockInterruptibly();
 
             try {

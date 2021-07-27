@@ -44,6 +44,7 @@ public class LatencyFaultToleranceImpl implements LatencyFaultTolerance<String> 
             }
         } else {
             old.setCurrentLatency(currentLatency);
+            //broker不可用结束时间戳
             old.setStartTimestamp(System.currentTimeMillis() + notAvailableDuration);
         }
     }
@@ -97,8 +98,11 @@ public class LatencyFaultToleranceImpl implements LatencyFaultTolerance<String> 
     }
 
     class FaultItem implements Comparable<FaultItem> {
+        //brokerName
         private final String name;
+        //本地消息发送延迟
         private volatile long currentLatency;
+        //故障规避开始时间戳
         private volatile long startTimestamp;
 
         public FaultItem(final String name) {

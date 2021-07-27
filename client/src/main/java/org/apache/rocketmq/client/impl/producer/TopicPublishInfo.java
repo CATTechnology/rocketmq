@@ -68,18 +68,23 @@ public class TopicPublishInfo {
 
     public MessageQueue selectOneMessageQueue(final String lastBrokerName) {
         if (lastBrokerName == null) {
+            //第一次发送
             return selectOneMessageQueue();
         } else {
             for (int i = 0; i < this.messageQueueList.size(); i++) {
+                //index增加
                 int index = this.sendWhichQueue.incrementAndGet();
+                //取模获取到MessageQueue的 index
                 int pos = Math.abs(index) % this.messageQueueList.size();
                 if (pos < 0)
                     pos = 0;
                 MessageQueue mq = this.messageQueueList.get(pos);
+                //规避上次的Broker
                 if (!mq.getBrokerName().equals(lastBrokerName)) {
                     return mq;
                 }
             }
+            //以上情况不满足，那就返回sendSwitchQueue自增取模后index对应的MessageQueue
             return selectOneMessageQueue();
         }
     }

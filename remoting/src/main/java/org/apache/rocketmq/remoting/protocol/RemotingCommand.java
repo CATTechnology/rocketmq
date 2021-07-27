@@ -235,6 +235,8 @@ public class RemotingCommand {
         Class<? extends CommandCustomHeader> classHeader) throws RemotingCommandException {
         CommandCustomHeader objectHeader;
         try {
+            //RegisterBrokerResponseHeader
+            //
             objectHeader = classHeader.newInstance();
         } catch (InstantiationException e) {
             return null;

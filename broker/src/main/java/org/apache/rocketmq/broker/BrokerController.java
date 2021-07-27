@@ -232,8 +232,10 @@ public class BrokerController {
     }
 
     public boolean initialize() throws CloneNotSupportedException {
+        //加载topic配置
         boolean result = this.topicConfigManager.load();
 
+        //
         result = result && this.consumerOffsetManager.load();
         result = result && this.subscriptionGroupManager.load();
         result = result && this.consumerFilterManager.load();
@@ -344,6 +346,7 @@ public class BrokerController {
                 }
             }, initialDelay, period, TimeUnit.MILLISECONDS);
 
+            //每10秒钟持久化一次当前Broker上的topic
             this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
                 @Override
                 public void run() {
@@ -543,6 +546,9 @@ public class BrokerController {
         }
     }
 
+    /**
+     *  注册发送消息、拉取消息、查询消息线程池
+     */
     public void registerProcessor() {
         /**
          * SendMessageProcessor
@@ -776,6 +782,7 @@ public class BrokerController {
         } catch (InterruptedException e) {
         }
 
+        //向所有的Nameserver发送注销Broker的请求
         this.unregisterBrokerAll();
 
         if (this.sendMessageExecutor != null) {
@@ -881,17 +888,20 @@ public class BrokerController {
             this.filterServerManager.start();
         }
 
+        //是否开启DLeger
         if (!messageStoreConfig.isEnableDLegerCommitLog()) {
             startProcessorByHa(messageStoreConfig.getBrokerRole());
             handleSlaveSynchronize(messageStoreConfig.getBrokerRole());
             this.registerBrokerAll(true, false, true);
         }
 
+        //Broker心跳周期时间
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
 
             @Override
             public void run() {
                 try {
+                    //Broker上报信息到所有的NameServer，间隔时间可以通过registerNameServerPeriod配置，默认是10秒，用于可以在[10,60]秒之间选择
                     BrokerController.this.registerBrokerAll(true, false, brokerConfig.isForceRegister());
                 } catch (Throwable e) {
                     log.error("registerBrokerAll Exception", e);
@@ -954,6 +964,7 @@ public class BrokerController {
 
     private void doRegisterBrokerAll(boolean checkOrderConfig, boolean oneway,
         TopicConfigSerializeWrapper topicConfigWrapper) {
+        //注册当前Broker信息到所有的NameServer上
         List<RegisterBrokerResult> registerBrokerResultList = this.brokerOuterAPI.registerBrokerAll(
             this.brokerConfig.getBrokerClusterName(),
             this.getBrokerAddr(),

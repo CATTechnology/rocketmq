@@ -51,6 +51,14 @@ public class ClientManageProcessor extends AsyncNettyRequestProcessor implements
         this.brokerController = brokerController;
     }
 
+    /**
+     * 处理客户端请求
+     *
+     * @param ctx 请求处理器上下文
+     * @param request 请求参数
+     * @return
+     * @throws RemotingCommandException
+     */
     @Override
     public RemotingCommand processRequest(ChannelHandlerContext ctx, RemotingCommand request)
         throws RemotingCommandException {
@@ -100,6 +108,15 @@ public class ClientManageProcessor extends AsyncNettyRequestProcessor implements
                     PermName.PERM_WRITE | PermName.PERM_READ, topicSysFlag);
             }
 
+            /**
+             * 注册消费者到ConsumerManager中
+             *
+             * 在Consumer启动后，它就会通过定时任务不断地向RocketMQ集群中的所有Broker实例发送心跳
+             * 包（其中包含了消息消费分组名称、订阅关系集合、消息通信模式和客户端id的值等信息）。Broker端
+             * 在收到Consumer的心跳消息后，会将它维护在ConsumerManager的本地缓存变量—
+             * consumerTable，同时并将封装后的客户端网络通道信息保存在本地缓存变量—channelInfoTable中，
+             * 为之后做Consumer端的负载均衡提供可以依据的元数据信息
+             */
             boolean changed = this.brokerController.getConsumerManager().registerConsumer(
                 data.getGroupName(),
                 clientChannelInfo,
