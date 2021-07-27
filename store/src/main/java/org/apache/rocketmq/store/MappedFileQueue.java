@@ -307,6 +307,10 @@ public class MappedFileQueue {
         return 0;
     }
 
+    /**
+     * 返回存储文件当前写指针
+     * @return
+     */
     public long getMaxWrotePosition() {
         MappedFile mappedFile = getLastMappedFile();
         if (mappedFile != null) {

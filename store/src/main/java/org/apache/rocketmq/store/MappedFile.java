@@ -44,25 +44,54 @@ import sun.nio.ch.DirectBuffer;
 public class MappedFile extends ReferenceResource {
     public static final int OS_PAGE_SIZE = 1024 * 4;
     protected static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
-
+    /**
+     * 当前JVM实例中 MappedFile虚拟内存
+     */
     private static final AtomicLong TOTAL_MAPPED_VIRTUAL_MEMORY = new AtomicLong(0);
-
+    /**
+     * 当前JVM实例中 MappedFile对象个数
+     */
     private static final AtomicInteger TOTAL_MAPPED_FILES = new AtomicInteger(0);
+    /**
+     * 当前文件的写指针
+     */
     protected final AtomicInteger wrotePosition = new AtomicInteger(0);
+    /**
+     * 当前文件的提交指针
+     */
     protected final AtomicInteger committedPosition = new AtomicInteger(0);
+    /**
+     * 刷写到磁盘指针
+     */
     private final AtomicInteger flushedPosition = new AtomicInteger(0);
     protected int fileSize;
     protected FileChannel fileChannel;
     /**
      * Message will put to here first, and then reput to FileChannel if writeBuffer is not null.
+     * 堆外内存ByteBuffer
      */
     protected ByteBuffer writeBuffer = null;
+    /**
+     * 堆外内存池
+     */
     protected TransientStorePool transientStorePool = null;
     private String fileName;
+    /**
+     * 该文件的物理偏移量
+     */
     private long fileFromOffset;
     private File file;
+    /**
+     * 物理文件对应的内存映射Buffer
+     */
     private MappedByteBuffer mappedByteBuffer;
+    /**
+     * 文件最后一次内容写入时间
+     */
     private volatile long storeTimestamp = 0;
+    /**
+     * 是否是MappedFileQueue队列中第一个文件
+     */
     private boolean firstCreateInQueue = false;
 
     public MappedFile() {
@@ -199,10 +228,11 @@ public class MappedFile extends ReferenceResource {
     public AppendMessageResult appendMessagesInner(final MessageExt messageExt, final AppendMessageCallback cb) {
         assert messageExt != null;
         assert cb != null;
-
+        //获取文件的写入指针
         int currentPos = this.wrotePosition.get();
 
         if (currentPos < this.fileSize) {
+            //通过writeBuffer.slice()创建一个与MappedFile共享的内存区,并设置position为当前指针
             ByteBuffer byteBuffer = writeBuffer != null ? writeBuffer.slice() : this.mappedByteBuffer.slice();
             byteBuffer.position(currentPos);
             AppendMessageResult result;
@@ -269,21 +299,27 @@ public class MappedFile extends ReferenceResource {
      * @return The current flushed position
      */
     public int flush(final int flushLeastPages) {
+        //数据达到刷盘条件
         if (this.isAbleToFlush(flushLeastPages)) {
+            //加锁，同步刷盘
             if (this.hold()) {
+                //获取当前文件的最大可读指针
                 int value = getReadPosition();
 
                 try {
+                    //数据从writeBuffer提交数据到fileChannel，再刷新到磁盘
                     //We only append data to fileChannel or mappedByteBuffer, never both.
                     if (writeBuffer != null || this.fileChannel.position() != 0) {
                         this.fileChannel.force(false);
                     } else {
+                        //从mmap刷新数据到磁盘
                         this.mappedByteBuffer.force();
                     }
                 } catch (Throwable e) {
                     log.error("Error occurred when force data to disk.", e);
                 }
 
+                //更新刷盘位置
                 this.flushedPosition.set(value);
                 this.release();
             } else {
